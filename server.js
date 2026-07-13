@@ -1,32 +1,26 @@
-const express = require('express');
+require('dotenv').config();
 
-const app = express();
-const PORT = 3000;
+const app = require('./src/app');
 
-app.get('/', (req, res) => {
-    res.send('¡Bienvenido al Portafolio de Servicios en Node.js!');
+const PORT = process.env.PORT || 3000;
+
+const server = app.listen(PORT, () => {
+    console.log(
+        `Servidor ejecutándose en http://localhost:${PORT}`
+    );
+    console.log(
+        `Entorno actual: ${process.env.NODE_ENV || 'development'}`
+    );
 });
 
-app.get('/event-loop', (req, res) => {
-    console.log('1. Inicia la solicitud a /event-loop');
+const closeServer = (signal) => {
+    console.log(`\nSe recibió ${signal}. Cerrando el servidor...`);
 
-    setTimeout(() => {
-        console.log('4. Finaliza la tarea asíncrona después de 2 segundos');
-    }, 2000);
-
-    Promise.resolve().then(() => {
-        console.log('3. Se ejecuta la microtarea de la Promise');
+    server.close(() => {
+        console.log('Servidor cerrado correctamente.');
+        process.exit(0);
     });
+};
 
-    console.log('2. Node.js continúa sin bloquear el servidor');
-
-    res.json({
-        mensaje: 'Demostración del Event Loop ejecutada correctamente',
-        explicacion:
-            'La respuesta se envía sin esperar a que termine setTimeout, lo que demuestra el comportamiento asíncrono y no bloqueante de Node.js.',
-    });
-});
-
-app.listen(PORT, () => {
-    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
-});
+process.on('SIGINT', () => closeServer('SIGINT'));
+process.on('SIGTERM', () => closeServer('SIGTERM'));
