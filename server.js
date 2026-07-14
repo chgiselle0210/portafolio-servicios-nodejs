@@ -6,6 +6,8 @@ const {
     sequelize,
 } = require('./src/config/database');
 
+require('./src/models/user.model');
+
 const PORT = process.env.PORT || 3000;
 
 let server;
@@ -13,6 +15,10 @@ let server;
 const startServer = async () => {
     try {
         await testDatabaseConnection();
+
+        await sequelize.sync({
+            alter: process.env.NODE_ENV === 'development',
+        });
 
         server = app.listen(PORT, () => {
             console.log(
