@@ -4,7 +4,7 @@ const {
     register,
     login,
     getProfile,
-    getAdminArea,
+    getAdminResource,
 } = require('../controllers/auth.controller');
 
 const {
@@ -15,7 +15,7 @@ const {
 
 const {
     authenticateToken,
-    authorizeRoles,
+    authorizeRole,
 } = require('../middleware/auth.middleware');
 
 const router = express.Router();
@@ -43,8 +43,8 @@ router.get(
 router.get(
     '/admin',
     authenticateToken,
-    authorizeRoles('admin'),
-    getAdminArea
+    authorizeRole('admin'),
+    getAdminResource
 );
 
 module.exports = router;

@@ -1,37 +1,35 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { UniqueConstraintError } = require('sequelize');
 
 const {
     findUserByEmail,
+    findUserById,
     createUser,
-    getPublicUserData,
+    getSafeUserData,
 } = require('../services/user.service');
 
-const generateToken = (user) => {
-    if (!process.env.JWT_SECRET) {
-        throw new Error(
-            'La variable JWT_SECRET no está configurada'
-        );
-    }
-
-    return jwt.sign(
+const generateToken = (user) =>
+    jwt.sign(
         {
             id: user.id,
             role: user.role,
         },
         process.env.JWT_SECRET,
         {
-            expiresIn:
-                process.env.JWT_EXPIRES_IN || '1h',
+            expiresIn: process.env.JWT_EXPIRES_IN || '1h',
         }
     );
-};
 
 const register = async (req, res, next) => {
     try {
-        const { name, email, password } = req.body;
+        const {
+            name,
+            email,
+            password,
+        } = req.body;
 
-        const existingUser = findUserByEmail(email);
+        const existingUser = await findUserByEmail(email);
 
         if (existingUser) {
             return res.status(409).json({
@@ -39,35 +37,40 @@ const register = async (req, res, next) => {
             });
         }
 
-        const hashedPassword = await bcrypt.hash(
-            password,
-            12
-        );
+        const hashedPassword = await bcrypt.hash(password, 12);
 
-        const newUser = createUser({
+        const user = await createUser({
             name,
             email,
             password: hashedPassword,
-            role: 'user',
         });
 
-        const token = generateToken(newUser);
+        const token = generateToken(user);
 
         return res.status(201).json({
             mensaje: 'Usuario registrado correctamente',
-            usuario: getPublicUserData(newUser),
+            usuario: getSafeUserData(user),
             token,
         });
     } catch (error) {
+        if (error instanceof UniqueConstraintError) {
+            return res.status(409).json({
+                error: 'El correo electrónico ya está registrado',
+            });
+        }
+
         return next(error);
     }
 };
 
 const login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const {
+            email,
+            password,
+        } = req.body;
 
-        const user = findUserByEmail(email);
+        const user = await findUserByEmail(email, true);
 
         if (!user) {
             return res.status(401).json({
@@ -75,12 +78,12 @@ const login = async (req, res, next) => {
             });
         }
 
-        const validPassword = await bcrypt.compare(
+        const passwordMatches = await bcrypt.compare(
             password,
             user.password
         );
 
-        if (!validPassword) {
+        if (!passwordMatches) {
             return res.status(401).json({
                 error: 'Credenciales incorrectas',
             });
@@ -90,7 +93,7 @@ const login = async (req, res, next) => {
 
         return res.status(200).json({
             mensaje: 'Inicio de sesión exitoso',
-            usuario: getPublicUserData(user),
+            usuario: getSafeUserData(user),
             token,
         });
     } catch (error) {
@@ -98,24 +101,34 @@ const login = async (req, res, next) => {
     }
 };
 
-const getProfile = (req, res) => {
-    res.status(200).json({
-        mensaje: 'Perfil consultado correctamente',
-        usuario: req.user,
-    });
+const getProfile = async (req, res, next) => {
+    try {
+        const user = await findUserById(req.user.id);
+
+        if (!user) {
+            return res.status(404).json({
+                error: 'Usuario no encontrado',
+            });
+        }
+
+        return res.status(200).json({
+            mensaje: 'Perfil consultado correctamente',
+            usuario: getSafeUserData(user),
+        });
+    } catch (error) {
+        return next(error);
+    }
 };
 
-const getAdminArea = (req, res) => {
+const getAdminResource = async (req, res) =>
     res.status(200).json({
-        mensaje:
-            'Acceso autorizado al área administrativa',
+        mensaje: 'Acceso administrativo concedido',
         usuario: req.user,
     });
-};
 
 module.exports = {
     register,
     login,
     getProfile,
-    getAdminArea,
+    getAdminResource,
 };

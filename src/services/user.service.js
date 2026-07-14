@@ -1,47 +1,56 @@
-const users = [];
+const User = require('../models/user.model');
 
-let nextUserId = 1;
+const findUserByEmail = async (email, includePassword = false) => {
+    const normalizedEmail = email.trim().toLowerCase();
 
-const findUserByEmail = (email) =>
-    users.find(
-        (user) => user.email === email.toLowerCase()
-    );
+    if (includePassword) {
+        return User.scope('withPassword').findOne({
+            where: {
+                email: normalizedEmail,
+            },
+        });
+    }
 
-const findUserById = (id) =>
-    users.find((user) => user.id === Number(id));
+    return User.findOne({
+        where: {
+            email: normalizedEmail,
+        },
+    });
+};
 
-const createUser = ({
+const findUserById = async (id) =>
+    User.findByPk(Number(id));
+
+const createUser = async ({
     name,
     email,
     password,
     role = 'user',
-}) => {
-    const newUser = {
-        id: nextUserId,
-        name,
-        email: email.toLowerCase(),
+}) =>
+    User.create({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
         password,
         role,
-        createdAt: new Date().toISOString(),
-    };
+    });
 
-    users.push(newUser);
-    nextUserId += 1;
+const getSafeUserData = (user) => {
+    if (!user) {
+        return null;
+    }
 
-    return newUser;
+    const plainUser = user.get
+        ? user.get({ plain: true })
+        : { ...user };
+
+    delete plainUser.password;
+
+    return plainUser;
 };
-
-const getPublicUserData = (user) => ({
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    role: user.role,
-    createdAt: user.createdAt,
-});
 
 module.exports = {
     findUserByEmail,
     findUserById,
     createUser,
-    getPublicUserData,
+    getSafeUserData,
 };
