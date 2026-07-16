@@ -4,6 +4,8 @@ const rateLimit = require('express-rate-limit');
 
 const indexRoutes = require('./routes/index.routes');
 const authRoutes = require('./routes/auth.routes');
+const serviceRoutes = require('./routes/service.routes');
+
 const {
     notFoundHandler,
     errorHandler,
@@ -28,10 +30,16 @@ app.disable('x-powered-by');
 app.use(helmet());
 app.use(generalLimiter);
 app.use(express.json({ limit: '10kb' }));
-app.use(express.urlencoded({ extended: false, limit: '10kb' }));
+app.use(
+    express.urlencoded({
+        extended: false,
+        limit: '10kb',
+    })
+);
 
 app.use('/', indexRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/services', serviceRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

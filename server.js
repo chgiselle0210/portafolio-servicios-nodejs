@@ -7,6 +7,7 @@ const {
 } = require('./src/config/database');
 
 require('./src/models/user.model');
+require('./src/models/service.model');
 
 const PORT = process.env.PORT || 3000;
 
