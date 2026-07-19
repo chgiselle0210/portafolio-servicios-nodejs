@@ -1,6 +1,7 @@
-require('dotenv').config();
+require('./src/config/env');
 
 const app = require('./src/app');
+
 const {
     testDatabaseConnection,
     sequelize,
@@ -9,7 +10,7 @@ const {
 require('./src/models/user.model');
 require('./src/models/service.model');
 
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
 
 let server;
 
@@ -17,6 +18,13 @@ const startServer = async () => {
     try {
         await testDatabaseConnection();
 
+        /*
+         * En desarrollo, Sequelize puede actualizar la estructura
+         * de las tablas automáticamente.
+         *
+         * En pruebas y producción no se utiliza alter para evitar
+         * modificaciones inesperadas en la base de datos.
+         */
         await sequelize.sync({
             alter: process.env.NODE_ENV === 'development',
         });
@@ -25,8 +33,9 @@ const startServer = async () => {
             console.log(
                 `Servidor ejecutándose en http://localhost:${PORT}`
             );
+
             console.log(
-                `Entorno actual: ${process.env.NODE_ENV || 'development'}`
+                `Entorno actual: ${process.env.NODE_ENV}`
             );
         });
     } catch (error) {
@@ -43,16 +52,35 @@ const closeServer = async (signal) => {
         `\nSe recibió ${signal}. Cerrando la aplicación...`
     );
 
-    if (server) {
-        await new Promise((resolve) => {
-            server.close(resolve);
-        });
+    try {
+        if (server) {
+            await new Promise((resolve, reject) => {
+                server.close((error) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    resolve();
+                });
+            });
+        }
+
+        await sequelize.close();
+
+        console.log(
+            'Servidor y conexión de base de datos cerrados correctamente.'
+        );
+
+        process.exit(0);
+    } catch (error) {
+        console.error(
+            'Ocurrió un error al cerrar la aplicación:',
+            error.message
+        );
+
+        process.exit(1);
     }
-
-    await sequelize.close();
-
-    console.log('Servidor y conexión de base de datos cerrados correctamente.');
-    process.exit(0);
 };
 
 process.on('SIGINT', () => closeServer('SIGINT'));

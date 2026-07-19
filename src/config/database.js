@@ -1,3 +1,5 @@
+require('./env');
+
 const { Sequelize } = require('sequelize');
 
 const requiredDatabaseVariables = [
