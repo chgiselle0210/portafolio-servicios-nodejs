@@ -1,16 +1,23 @@
+# Dependencias
 node_modules/
+
+# Cobertura de pruebas
 coverage/
 
+# Variables de entorno
 .env
 .env.*
 !.env.example
 !.env.production.example
 
+# Docker (desarrollo local)
+.env.docker
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Archivos del sistema
 .DS_Store
 Thumbs.db
-
-.env.docker
