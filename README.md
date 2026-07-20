@@ -104,8 +104,6 @@ Las variables corresponden principalmente a la configuración de la base de dato
 - Crear usuario
 - Eliminar usuario
 
-La colección de Postman que apliqué durante el desarrollo se encuentra incluida en este repositorio para hacer más sencillas las pruebas de los endpoints.
-
 ---
 
 ## Despliegue
