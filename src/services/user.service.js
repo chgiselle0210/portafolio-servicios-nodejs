@@ -1,6 +1,9 @@
 const User = require('../models/user.model');
 
-const findUserByEmail = async (email, includePassword = false) => {
+const findUserByEmail = async (
+    email,
+    includePassword = false
+) => {
     const normalizedEmail = email.trim().toLowerCase();
 
     if (includePassword) {
@@ -34,6 +37,20 @@ const createUser = async ({
         role,
     });
 
+const deleteUserById = async (id) => {
+    const user = await findUserById(id);
+
+    if (!user) {
+        return null;
+    }
+
+    const safeUserData = getSafeUserData(user);
+
+    await user.destroy();
+
+    return safeUserData;
+};
+
 const getSafeUserData = (user) => {
     if (!user) {
         return null;
@@ -52,5 +69,6 @@ module.exports = {
     findUserByEmail,
     findUserById,
     createUser,
+    deleteUserById,
     getSafeUserData,
 };

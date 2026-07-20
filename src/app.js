@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-
+const userRoutes = require('./routes/user.routes');
 const indexRoutes = require('./routes/index.routes');
 const authRoutes = require('./routes/auth.routes');
 const serviceRoutes = require('./routes/service.routes');
@@ -42,6 +42,7 @@ app.use(
 app.use('/', indexRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/services', serviceRoutes);
+app.use('/api/users', userRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
